@@ -1,12 +1,14 @@
 import pandas as pd
 from st_on_hover_tabs import on_hover_tabs
 import streamlit as st
-from streamlit_elements import elements, mui, html
-from streamlit_elements import dashboard
-
 # Security
 #passlib,hashlib,bcrypt,scrypt
 import hashlib
+
+access = []
+
+
+
 def make_hashes(password):
     return hashlib.sha256(str.encode(password)).hexdigest()
 
@@ -38,26 +40,27 @@ def view_all_users():
     data = c.fetchall()
     return data
 
-def login():
+def login():###############################################################################################################
+    global result
     st.subheader("Login Section")
     username = st.text_input("User Name")
     password = st.text_input("Password",type='password')
     if st.button("Login"):
-        # if password == '12345':
+        
         create_usertable()
         hashed_pswd = make_hashes(password)
-
+        
         result = login_user(username,check_hashes(password,hashed_pswd))
         if result:
-            # redirect to home page
             st.success("Logged In as {}".format(username))
-            st.subheader("User Profiles")
-            user_result = view_all_users()
-            clean_db = pd.DataFrame(user_result,columns=["Username","Password"])
-            st.dataframe(clean_db)
+            access.append(result)
+            print(access)
             
-        else:
-            st.warning("Incorrect Username/Password")
+    try:
+        return result , access
+    except Exception as e:
+        print(e)
+        
         
 def signup():
     st.subheader("Create New Account")
@@ -70,23 +73,57 @@ def signup():
         st.success("You have successfully created a valid Account")
         st.info("Go to Login Menu to login")
 
+def get_user_input():
+    age = st.slider('Age', 0, 100)
+    nationality = st.text_input('Nationality', '')
+    education = st.selectbox('Education', ['High School', 'College', 'Graduate School'])
+    interest = st.multiselect('Interest', ['Sports', 'Music', 'Reading', 'Traveling'])
+    subject = st.text_input('Subject', '')
     
+    # Create a dictionary to store the user's input
+    user_data = {'Age': age,
+                'Nationality': nationality,
+                'Education': education,
+                'Interest': interest,
+                'Subject': subject}
+    
+    return user_data
+
+def base():
+    
+    # Set the title of the app
+    st.title('Student Information')
+    
+    # Call the get_user_input function to get the user's input
+    user_data = get_user_input()
+    
+    # Display the user's input
+    st.write('Age:', user_data['Age'])
+    st.write('Nationality:', user_data['Nationality'])
+    st.write('Education:', user_data['Education'])
+    st.write('Interest:', user_data['Interest'])
+    st.write('Subject:', user_data['Subject'])
+
 
 def main():
     # st.title("Simple Login App")
-
+    
     st.set_page_config(layout="wide")
 
     st.markdown('<style>' + open('./style.css').read() + '</style>', unsafe_allow_html=True)
 
 
     with st.sidebar:
-        tabs = on_hover_tabs(tabName=['Dashboard', 'login', 'signup'], 
-                            iconName=['dashboard', 'money', 'economy'], default_choice=0)
-
+        tabs = on_hover_tabs(tabName=['login', 'Dashboard', 'signup'], 
+                            iconName=['money', 'dashboard', 'economy'], default_choice=0)
+    
     if tabs =='Dashboard':
-        st.title("Navigation Bar")
-        
+        if access != []:
+            st.title("Dashboard")
+            base()
+        else:
+            st.warning("Please login to view this page")
+            st.info("Go to Login Menu to login")
         
 
     elif tabs == 'login':
