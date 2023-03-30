@@ -5,9 +5,11 @@ import streamlit as st
 #passlib,hashlib,bcrypt,scrypt
 import hashlib
 
+
+
+
+
 access = []
-
-
 
 def make_hashes(password):
     return hashlib.sha256(str.encode(password)).hexdigest()
@@ -16,14 +18,15 @@ def check_hashes(password,hashed_text):
     if make_hashes(password) == hashed_text:
         return hashed_text
     return False
+
 # DB Management
 import sqlite3 
 conn = sqlite3.connect('data.db')
 c = conn.cursor()
+
 # DB  Functions
 def create_usertable():
     c.execute('CREATE TABLE IF NOT EXISTS userstable(username TEXT,password TEXT)')
-
 
 def add_userdata(username,password):
     c.execute('INSERT INTO userstable(username,password) VALUES (?,?)',(username,password))
@@ -34,34 +37,37 @@ def login_user(username,password):
     data = c.fetchall()
     return data
 
-
 def view_all_users():
     c.execute('SELECT * FROM userstable')
     data = c.fetchall()
     return data
 
-def login():###############################################################################################################
-    global result
+def login():
+    session = st.session_state
+    
+    if 'logged_in' in st.session_state:
+        if st.session_state['logged_in']:
+            st.success("Logged In as {}".format(st.session_state['username']))
+            return
+
+    if 'logged_in' not in session:
+        session['logged_in'] = False
+        
     st.subheader("Login Section")
     username = st.text_input("User Name")
     password = st.text_input("Password",type='password')
+    
     if st.button("Login"):
-        
         create_usertable()
         hashed_pswd = make_hashes(password)
-        
         result = login_user(username,check_hashes(password,hashed_pswd))
         if result:
+            session['logged_in'] = True
+            session['username'] = username
             st.success("Logged In as {}".format(username))
-            access.append(result)
-            print(access)
-            
-    try:
-        return result , access
-    except Exception as e:
-        print(e)
-        
-        
+        else:
+            st.warning("Incorrect username or password")
+
 def signup():
     st.subheader("Create New Account")
     new_user = st.text_input("Username")
@@ -74,7 +80,7 @@ def signup():
         st.info("Go to Login Menu to login")
 
 def get_user_input():
-    age = st.slider('Age', 0, 100)
+    age = st.number_input('Age', min_value=0, max_value=100, value=0)
     nationality = st.text_input('Nationality', '')
     education = st.selectbox('Education', ['High School', 'College', 'Graduate School'])
     interest = st.multiselect('Interest', ['Sports', 'Music', 'Reading', 'Traveling'])
@@ -89,14 +95,11 @@ def get_user_input():
     
     return user_data
 
-def base():
-    
+def base(username):
     # Set the title of the app
     st.title('Student Information')
-    
     # Call the get_user_input function to get the user's input
     user_data = get_user_input()
-    
     # Display the user's input
     st.write('Age:', user_data['Age'])
     st.write('Nationality:', user_data['Nationality'])
@@ -104,11 +107,11 @@ def base():
     st.write('Interest:', user_data['Interest'])
     st.write('Subject:', user_data['Subject'])
 
-
 def main():
     # st.title("Simple Login App")
     
     st.set_page_config(layout="wide")
+    
 
     st.markdown('<style>' + open('./style.css').read() + '</style>', unsafe_allow_html=True)
 
@@ -118,12 +121,11 @@ def main():
                             iconName=['money', 'dashboard', 'economy'], default_choice=0)
     
     if tabs =='Dashboard':
-        if access != []:
-            st.title("Dashboard")
-            base()
-        else:
-            st.warning("Please login to view this page")
-            st.info("Go to Login Menu to login")
+        if 'logged_in' in st.session_state:
+            if st.session_state['logged_in']:
+                base(st.session_state['username'])
+            else:
+                st.warning("Please login to continue")
         
 
     elif tabs == 'login':
