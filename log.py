@@ -48,7 +48,7 @@ def login():
     if 'logged_in' in st.session_state:
         if st.session_state['logged_in']:
             st.success("Logged In as {}".format(st.session_state['username']))
-            return
+            return 
 
     if 'logged_in' not in session:
         session['logged_in'] = False
@@ -65,6 +65,7 @@ def login():
             session['logged_in'] = True
             session['username'] = username
             st.success("Logged In as {}".format(username))
+            base()
         else:
             st.warning("Incorrect username or password")
 
@@ -95,7 +96,7 @@ def get_user_input():
     
     return user_data
 
-def base(username):
+def base():
     # Set the title of the app
     st.title('Student Information')
     # Call the get_user_input function to get the user's input
